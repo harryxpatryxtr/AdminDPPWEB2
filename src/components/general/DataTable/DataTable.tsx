@@ -205,7 +205,7 @@ export function DataTable({
   });
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between w-full py-4">
+      {/* <div className="flex items-center justify-between w-full py-4">
         <Input
           placeholder="Buscar permisos..."
           value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
@@ -219,7 +219,7 @@ export function DataTable({
             <React.Fragment key={index}>{action}</React.Fragment>
           ))}
         </div>
-      </div>
+      </div> */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>

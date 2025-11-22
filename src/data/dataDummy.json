@@ -1,0 +1,66 @@
+{
+  "domains": [
+    {
+      "codigo": "1",
+      "domain": "Domain 1",
+      "descripcion": "Descripcion 1",
+      "autor": "Autor 1",
+      "status": "1"
+    },
+    {
+      "codigo": "2",
+      "domain": "Domain 2",
+      "descripcion": "Descripcion 2",
+      "autor": "Autor 2",
+      "status": "1"
+    }
+  ],
+  "userTypes": [
+    {
+      "codigo": "1",
+      "typeUser": "User Type 1",
+      "descripcion": "Descripcion 1",
+      "autor": "Autor 1",
+      "status": "1"
+    },
+    {
+      "codigo": "2",
+      "typeUser": "User Type 2",
+      "descripcion": "Descripcion 2",
+      "autor": "Autor 2",
+      "status": "1"
+    }
+  ],
+  "documentTypes": [
+    {
+      "codigo": "1",
+      "typeDocument": "Document Type 1",
+      "descripcion": "Descripcion 1",
+      "autor": "Autor 1",
+      "status": "1"
+    },
+    {
+      "codigo": "2",
+      "typeDocument": "Document Type 2",
+      "descripcion": "Descripcion 2",
+      "autor": "Autor 2",
+      "status": "1"
+    }
+  ],
+  "jobs": [
+    {
+      "codigo": "1",
+      "job": "Job 1",
+      "descripcion": "Descripcion 1",
+      "autor": "Autor 1",
+      "status": "1"
+    },
+    {
+      "codigo": "2",
+      "job": "Job 2",
+      "descripcion": "Descripcion 2",
+      "autor": "Autor 2",
+      "status": "1"
+    }
+  ]
+}

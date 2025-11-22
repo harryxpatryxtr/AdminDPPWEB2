@@ -33,10 +33,10 @@ const items = {
       url: "#",
       icon: Settings2,
       items: [
-        { title: "Dominio", url: "/dominio" },
-        { title: "Tipo Usuario", url: "/tipo-usuario" },
-        { title: "Tipo Documento", url: "/tipo-documento" },
-        { title: "Tipo Cargo", url: "/tipo-cargo" }
+        { title: "Dominio", url: "/domain" },
+        { title: "Tipo Usuario", url: "/type-users" },
+        { title: "Tipo Documento", url: "/type-documents" },
+        { title: "Tipo Puesto", url: "/type-jobs" }
       ]
     },
     {
@@ -44,16 +44,16 @@ const items = {
       url: "#",
       icon: SquareTerminal,
       items: [
-        { title: "Permiso", url: "/permiso" },
-        { title: "Rol", url: "/rol" },
-        { title: "Usuario", url: "/usuario" }
+        { title: "Permiso", url: "/permissions" },
+        { title: "Rol", url: "/roles" },
+        { title: "Usuario", url: "/users" }
       ]
     },
     {
       title: "REO",
       url: "#",
       icon: Bot,
-      items: [{ title: "Empresa", url: "/empresa" }]
+      items: [{ title: "Empresa", url: "/companies" }]
     }
   ]
 };
