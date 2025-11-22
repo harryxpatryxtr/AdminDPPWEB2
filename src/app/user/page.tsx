@@ -1,7 +1,6 @@
 'use client';
 import Layout from "@/components/layout";
 import { DataTable } from "@/components/general";
-import { useSession, signOut } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 
   
@@ -19,12 +18,6 @@ const columns = [
 
 export default function UserPage() {
 
-const { data: session, status } = useSession({
-    required: true,
-    onUnauthenticated() {
-      redirect('/login')
-    },
-  })
   return (
     <Layout>
       <h1 className="text-2xl font-bold">Usuario Page</h1>
