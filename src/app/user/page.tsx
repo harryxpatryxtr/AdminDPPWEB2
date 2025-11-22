@@ -1,7 +1,5 @@
 'use client';
 import Layout from "@/components/layout";
-<<<<<<< HEAD
-=======
 import { DataTable } from "@/components/general";
 import { useSession, signOut } from 'next-auth/react'
 import { redirect } from 'next/navigation'
@@ -18,7 +16,6 @@ const columns = [
   { id: "email", header: "Email" },
   { id: "phone", header: "Phone" },
 ];
->>>>>>> 2391840 (Login Gogle terminado)
 
 export default function UserPage() {
 
