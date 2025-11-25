@@ -3,7 +3,7 @@ import Layout from "@/components/layout";
 import { DataTable } from "@/components/general";
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
-
+import { redirect } from 'next/navigation'
   
 const data = [
   { id: 1, name: "John Doe" },
