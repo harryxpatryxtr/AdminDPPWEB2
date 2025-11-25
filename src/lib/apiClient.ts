@@ -17,9 +17,9 @@ export async function apiClient(
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_URL}${endpoint}`;
 
-  const requestHeaders: HeadersInit = {
+  const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...headers,
+    ...(headers as Record<string, string>),
   };
 
   // Agregar token de autenticación si es requerido
