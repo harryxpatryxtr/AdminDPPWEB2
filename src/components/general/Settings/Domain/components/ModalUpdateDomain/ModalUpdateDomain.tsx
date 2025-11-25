@@ -3,55 +3,67 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState, useEffect } from "react";
 import { domainService } from "@/services/domainService";
 import { useAuth } from "@/contexts/AuthContext";
+import type { Domain } from "../../types";
 
-interface ModalCreateDomainProps {
+interface ModalUpdateDomainProps {
+  domain: Domain;
   onSuccess?: () => void;
   onClose?: () => void;
 }
 
-export function ModalCreateDomain({ onSuccess, onClose }: ModalCreateDomainProps) {
-  const [id, setId] = useState('');
-  const [domain, setDomain] = useState('');
-  const [description, setDescription] = useState('');
+export function ModalUpdateDomain({ domain, onSuccess, onClose }: ModalUpdateDomainProps) {
+  const [description, setDescription] = useState(domain.description || '');
+  const [status, setStatus] = useState(domain.state || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    setDescription(domain.description || '');
+    setStatus(domain.state || '');
+  }, [domain]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!id.trim() || !domain.trim() || !description.trim()) {
-      setError('Por favor, completa todos los campos');
+    if (!description.trim()) {
+      setError('La descripción es requerida');
+      return;
+    }
+
+    if (!status) {
+      setError('El estado es requerido');
       return;
     }
 
     if (!isAuthenticated) {
-      setError('Debes estar autenticado para crear un dominio');
+      setError('Debes estar autenticado para actualizar un dominio');
       return;
     }
 
     try {
       setLoading(true);
-      await domainService.createDomain({
-        id: id.trim(),
-        name: domain.trim(),
+      await domainService.updateDomain({
+        id: domain.id,
         description: description.trim(),
+        name: domain.name,
+        // state: status,
       });
-      
-      // Limpiar formulario
-      setId('');
-      setDomain('');
-      setDescription('');
-      
-      // Llamar callbacks
       onSuccess?.();
       onClose?.();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error al crear el dominio';
+      const errorMessage = err instanceof Error ? err.message : 'Error al actualizar el dominio';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -61,26 +73,22 @@ export function ModalCreateDomain({ onSuccess, onClose }: ModalCreateDomainProps
   return (
     <form onSubmit={handleSubmit} className="space-y-4 py-4">
       <div className="space-y-2">
-        <Label htmlFor="id">ID *</Label>
+        <Label htmlFor="id">ID</Label>
         <Input
           id="id"
-          value={id}
-          onChange={(e) => setId(e.target.value)}
-          placeholder="Ej: DOM001"
-          required
-          disabled={loading}
+          value={domain.id}
+          disabled
+          className="bg-gray-50 cursor-not-allowed"
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="domain">Dominio *</Label>
+        <Label htmlFor="domain">Dominio</Label>
         <Input
           id="domain"
-          value={domain}
-          onChange={(e) => setDomain(e.target.value)}
-          placeholder="Ej: ejemplo.com"
-          required
-          disabled={loading}
+          value={domain.name}
+          disabled
+          className="bg-gray-50 cursor-not-allowed"
         />
       </div>
 
@@ -94,6 +102,23 @@ export function ModalCreateDomain({ onSuccess, onClose }: ModalCreateDomainProps
           required
           disabled={loading}
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="status">Estado *</Label>
+        <Select
+          value={status}
+          onValueChange={setStatus}
+          disabled={loading}
+        >
+          <SelectTrigger id="status" className="w-full">
+            <SelectValue placeholder="Selecciona un estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Activo</SelectItem>
+            <SelectItem value="inactive">Inactivo</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {error && (
@@ -112,9 +137,10 @@ export function ModalCreateDomain({ onSuccess, onClose }: ModalCreateDomainProps
           Cancelar
         </Button>
         <Button type="submit" disabled={loading}>
-          {loading ? 'Creando...' : 'Crear'}
+          {loading ? 'Actualizando...' : 'Actualizar'}
         </Button>
       </div>
     </form>
   );
 }
+

@@ -27,6 +27,12 @@ export async function apiClient(
     const token = getToken();
     if (token) {
       requestHeaders['Authorization'] = `Bearer ${token}`;
+      // Debug: verificar que el token se está enviando (solo en desarrollo)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔐 Token JWT agregado al header Authorization');
+      }
+    } else {
+      console.warn('⚠️ No se encontró token JWT para la petición autenticada');
     }
   }
 

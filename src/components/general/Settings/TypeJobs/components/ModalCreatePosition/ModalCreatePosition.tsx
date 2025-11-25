@@ -4,15 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { documentTypeService } from "@/services/documentTypeService";
+import { positionService } from "@/services/positionService";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface ModalCreateDocumentsProps {
+interface ModalCreatePositionProps {
   onSuccess?: () => void;
   onClose?: () => void;
 }
 
-export function ModalCreateDocuments({ onSuccess, onClose }: ModalCreateDocumentsProps) {
+export function ModalCreatePosition({ onSuccess, onClose }: ModalCreatePositionProps) {
   const [id, setId] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -30,13 +30,13 @@ export function ModalCreateDocuments({ onSuccess, onClose }: ModalCreateDocument
     }
 
     if (!isAuthenticated) {
-      setError('Debes estar autenticado para crear un tipo de documento');
+      setError('Debes estar autenticado para crear un puesto');
       return;
     }
 
     try {
       setLoading(true);
-      await documentTypeService.createDocumentType({
+      await positionService.createPosition({
         id: id.trim(),
         name: name.trim(),
         description: description.trim(),
@@ -51,7 +51,7 @@ export function ModalCreateDocuments({ onSuccess, onClose }: ModalCreateDocument
       onSuccess?.();
       onClose?.();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error al crear el tipo de documento';
+      const errorMessage = err instanceof Error ? err.message : 'Error al crear el puesto';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -66,19 +66,19 @@ export function ModalCreateDocuments({ onSuccess, onClose }: ModalCreateDocument
           id="id"
           value={id}
           onChange={(e) => setId(e.target.value)}
-          placeholder="Ej: DOC001"
+          placeholder="Ej: POS001"
           required
           disabled={loading}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="name">Tipo de Documento *</Label>
+        <Label htmlFor="name">Puesto *</Label>
         <Input
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Ej: Cédula"
+          placeholder="Ej: Desarrollador"
           required
           disabled={loading}
         />
@@ -90,7 +90,7 @@ export function ModalCreateDocuments({ onSuccess, onClose }: ModalCreateDocument
           id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Descripción del tipo de documento"
+          placeholder="Descripción del puesto"
           required
           disabled={loading}
         />
@@ -118,3 +118,4 @@ export function ModalCreateDocuments({ onSuccess, onClose }: ModalCreateDocument
     </form>
   );
 }
+

@@ -248,7 +248,7 @@ export function DataTable({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="whitespace-normal">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

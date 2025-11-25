@@ -1,16 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { Column, Row } from "@tanstack/react-table";
+import { ColumnDef, Row } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import type { TypeDocuments } from "../types";
 
-export const useColumns = (setNewData: (data: TypeDocuments) => void) => {
-  return [
+export const useColumns = (onEdit?: (typeDocument: TypeDocuments) => void) => {
+  const columns: ColumnDef<TypeDocuments>[] = [
     {
-      header: ({ column }: { column: Column<TypeDocuments> }) => {
+      header: () => {
         return (
           <Button
             variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="text-center"
           >
             Codigo
@@ -18,23 +17,35 @@ export const useColumns = (setNewData: (data: TypeDocuments) => void) => {
           </Button>
         );
       },
-      accessorKey: "codigo"
+      accessorKey: "id"
     },
     {
       header: "Tipo de Documento",
-      accessorKey: "typeDocument"
+      accessorKey: "name"
     },
     {
       header: "Descripcion",
-      accessorKey: "descripcion"
+      accessorKey: "description"
     },
     {
       header: "Autor",
-      accessorKey: "autor"
+      accessorKey: "author"
     },
     {
       header: "Estado",
-      accessorKey: "status"
+      accessorKey: "state",
+      cell: ({ row }) => {
+        const state = row.getValue("state") as string;
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs ${
+            state === 'active' 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-gray-100 text-gray-800'
+          }`}>
+            {state === 'active' ? 'Activo' : 'Inactivo'}
+          </span>
+        );
+      }
     },
     {
       header: "Acciones",
@@ -42,9 +53,16 @@ export const useColumns = (setNewData: (data: TypeDocuments) => void) => {
       cell: ({ row }: { row: Row<TypeDocuments> }) => {
         const typeDocument = row.original as TypeDocuments;
         return (
-          <Button variant="outline">Editar</Button>
+          <Button 
+            variant="outline" 
+            onClick={() => onEdit?.(typeDocument)}
+          >
+            Editar
+          </Button>
         );
       }
     }
-  ]
-}
+  ];
+
+  return columns;
+};

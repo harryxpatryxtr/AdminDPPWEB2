@@ -1,7 +1,7 @@
 export type Domain = {
-  codigo: string;
-  domain: string;
-  descripcion: string;
-  autor: string;
-  status: string;
+  id: string;
+  name: string;
+  description: string;
+  author: string;
+  state: string;
 };
