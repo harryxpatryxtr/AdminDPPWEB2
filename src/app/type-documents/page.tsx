@@ -1,10 +1,13 @@
 import Layout from "@/components/layout";
 import { TypeDocuments } from "@/components/general/Settings";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function TypeDocumentsPage() {
   return (
-    <Layout>
-      <TypeDocuments />
-    </Layout>
+    <ProtectedRoute>
+      <Layout>
+        <TypeDocuments />
+      </Layout>
+    </ProtectedRoute>
   );
 }

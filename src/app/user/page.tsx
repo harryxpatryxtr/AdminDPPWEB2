@@ -1,8 +1,8 @@
 'use client';
 import Layout from "@/components/layout";
 import { DataTable } from "@/components/general";
-import { useSession, signOut } from 'next-auth/react'
-import { redirect } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
   
 const data = [
@@ -18,17 +18,19 @@ const columns = [
 ];
 
 export default function UserPage() {
+  const { user, loading } = useAuth();
 
-const { data: session, status } = useSession({
-    required: true,
-    onUnauthenticated() {
-      redirect('/login')
-    },
-  })
   return (
-    <Layout>
-      <h1 className="text-2xl font-bold">Usuario Page</h1>
-    </Layout>
+    <ProtectedRoute>
+      <Layout>
+        <h1 className="text-2xl font-bold">Usuario Page</h1>
+        {user && (
+          <div className="mt-4">
+            <p>Bienvenido, {user.email}</p>
+          </div>
+        )}
+      </Layout>
+    </ProtectedRoute>
   );
 }
 

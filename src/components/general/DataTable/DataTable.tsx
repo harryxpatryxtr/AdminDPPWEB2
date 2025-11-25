@@ -205,21 +205,21 @@ export function DataTable({
   });
   return (
     <div className="w-full">
-      {/* <div className="flex items-center justify-between w-full py-4">
-        <Input
+      <div className="flex items-center justify-between w-full py-4">
+        {/* <Input
           placeholder="Buscar permisos..."
           value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("email")?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
-        />
+        /> */}
         <div className="flex items-center gap-2">
           {headerActions?.map((action, index) => (
             <React.Fragment key={index}>{action}</React.Fragment>
           ))}
         </div>
-      </div> */}
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>

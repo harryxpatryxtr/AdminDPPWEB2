@@ -1,40 +1,41 @@
 // middleware.ts
-import { withAuth } from "next-auth/middleware"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { isAuthenticatedRequest, getUserFromToken } from "@/lib/authMiddleware"
 
-export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token
-    const { pathname } = req.nextUrl
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const isAuthenticated = isAuthenticatedRequest(request)
+  const user = getUserFromToken(request)
 
-    // Redirigir usuarios autenticados del login al dashboard
-    if (pathname.startsWith('/login') && token) {
-      return NextResponse.redirect(new URL('/dashboard', req.url))
-    }
+  // Rutas públicas - permitir acceso sin autenticación
+  const publicRoutes = ['/', '/login']
+  const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith('/login')
 
-    // Proteger rutas de admin
-    if (pathname.startsWith('/admin') && token?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/dashboard', req.url))
-    }
-
-    return NextResponse.next()
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        const { pathname } = req.nextUrl
-
-        // Rutas públicas
-        if (pathname === '/' || pathname.startsWith('/login')) {
-          return true
-        }
-
-        // Otras rutas requieren autenticación
-        return !!token
-      },
-    },
+  // Si está en una ruta pública y está autenticado, redirigir al dashboard
+  if (isPublicRoute && isAuthenticated) {
+    return NextResponse.redirect(new URL('/user', request.url))
   }
-)
+
+  // Si no está en una ruta pública y no está autenticado, redirigir al login
+  if (!isPublicRoute && !isAuthenticated) {
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('callbackUrl', pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Proteger rutas de admin
+  if (pathname.startsWith('/admin')) {
+    if (!isAuthenticated) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    // Verificar rol de admin desde el token
+    if (user?.role !== 'admin') {
+      return NextResponse.redirect(new URL('/user', request.url))
+    }
+  }
+
+  return NextResponse.next()
+}
 
 export const config = {
   matcher: [

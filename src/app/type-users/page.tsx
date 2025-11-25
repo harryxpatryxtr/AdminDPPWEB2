@@ -1,10 +1,13 @@
 import Layout from "@/components/layout";
 import { TypeUsers } from "@/components/general/Settings";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
-export default function TypeUsersPage() {
+  export default function TypeUsersPage() {
   return (
-    <Layout>
-      <TypeUsers />
-    </Layout>
+    <ProtectedRoute>
+      <Layout>
+        <TypeUsers />
+      </Layout>
+    </ProtectedRoute>
   );
 }
