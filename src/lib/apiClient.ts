@@ -1,4 +1,4 @@
-import { getToken } from './tokenUtils';
+import { getToken, removeToken } from './tokenUtils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-back-adm-production.up.railway.app/api';
 
@@ -29,10 +29,15 @@ export async function apiClient(
       requestHeaders['Authorization'] = `Bearer ${token}`;
       // Debug: verificar que el token se está enviando (solo en desarrollo)
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔐 Token JWT agregado al header Authorization');
+        console.log('🔐 Token JWT agregado al header Authorization', {
+          endpoint,
+          method: fetchOptions.method || 'GET',
+          tokenLength: token.length,
+          tokenPreview: token.substring(0, 20) + '...'
+        });
       }
     } else {
-      console.warn('⚠️ No se encontró token JWT para la petición autenticada');
+      console.warn('⚠️ No se encontró token JWT para la petición autenticada', { endpoint });
     }
   }
 
@@ -40,6 +45,21 @@ export async function apiClient(
     ...fetchOptions,
     headers: requestHeaders,
   });
+
+  // Si la respuesta es 401 o 403, el token puede ser inválido o haber expirado
+  if (response.status === 401 || response.status === 403) {
+    const errorData = await response.json().catch(() => ({}));
+    if (errorData.error === 'Invalid token' || errorData.message?.includes('token')) {
+      // Limpiar token inválido
+      if (typeof window !== 'undefined') {
+        removeToken();
+        // Redirigir al login si estamos en el cliente
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+    }
+  }
 
   return response;
 }
@@ -57,8 +77,16 @@ export async function apiGet<T = any>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Error en la petición' }));
-    throw new Error(error.message || 'Error en la petición');
+    const error = await response.json().catch(() => ({ message: 'Error en la petición', error: 'Unknown error' }));
+    
+    // Manejar errores de autenticación específicamente
+    if (response.status === 401 || response.status === 403) {
+      if (error.error === 'Invalid token' || error.message?.includes('token')) {
+        throw new Error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+      }
+    }
+    
+    throw new Error(error.message || error.error || 'Error en la petición');
   }
 
   return response.json();
@@ -79,8 +107,16 @@ export async function apiPost<T = any>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Error en la petición' }));
-    throw new Error(error.message || 'Error en la petición');
+    const error = await response.json().catch(() => ({ message: 'Error en la petición', error: 'Unknown error' }));
+    
+    // Manejar errores de autenticación específicamente
+    if (response.status === 401 || response.status === 403) {
+      if (error.error === 'Invalid token' || error.message?.includes('token')) {
+        throw new Error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+      }
+    }
+    
+    throw new Error(error.message || error.error || 'Error en la petición');
   }
 
   return response.json();
@@ -101,8 +137,16 @@ export async function apiPut<T = any>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Error en la petición' }));
-    throw new Error(error.message || 'Error en la petición');
+    const error = await response.json().catch(() => ({ message: 'Error en la petición', error: 'Unknown error' }));
+    
+    // Manejar errores de autenticación específicamente
+    if (response.status === 401 || response.status === 403) {
+      if (error.error === 'Invalid token' || error.message?.includes('token')) {
+        throw new Error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+      }
+    }
+    
+    throw new Error(error.message || error.error || 'Error en la petición');
   }
 
   return response.json();
@@ -121,8 +165,16 @@ export async function apiDelete<T = any>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Error en la petición' }));
-    throw new Error(error.message || 'Error en la petición');
+    const error = await response.json().catch(() => ({ message: 'Error en la petición', error: 'Unknown error' }));
+    
+    // Manejar errores de autenticación específicamente
+    if (response.status === 401 || response.status === 403) {
+      if (error.error === 'Invalid token' || error.message?.includes('token')) {
+        throw new Error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+      }
+    }
+    
+    throw new Error(error.message || error.error || 'Error en la petición');
   }
 
   return response.json();
