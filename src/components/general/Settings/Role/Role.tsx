@@ -17,7 +17,8 @@ export function Role() {
   const { isAuthenticated } = useAuth();
   
   const [openCreate, setOpenCreate] = useState(false);
-  const [openAssign, setOpenAssign] = useState(false);
+  const [openPermissions, setOpenPermissions] = useState(false);
+  const [permissionsRole, setPermissionsRole] = useState<Role | null>(null);
   const [openUpdate, setOpenUpdate] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -37,7 +38,19 @@ export function Role() {
     handleRefresh();
   };
 
-  const columns = useColumns(handleEdit);
+  const handleManagePermissions = (role: Role) => {
+    setPermissionsRole(role);
+    setOpenPermissions(true);
+  };
+
+  // Se refresca al cerrar: refrescar con el modal abierto lo desmontaría
+  const closePermissions = () => {
+    setOpenPermissions(false);
+    setPermissionsRole(null);
+    handleRefresh();
+  };
+
+  const columns = useColumns(handleEdit, handleManagePermissions);
 
   // Cargar roles desde la API
   useEffect(() => {
@@ -51,7 +64,14 @@ export function Role() {
         setLoading(true);
         setError(null);
         const data = await roleService.getAllRoles();
-        setRoles(data);
+        // El listado de roles no trae sus permisos: se piden por rol
+        const permissionsByRole = await Promise.allSettled(
+          data.map(role => roleService.getPermissionsByRole(role._id))
+        );
+        setRoles(data.map((role, index) => {
+          const result = permissionsByRole[index];
+          return { ...role, permissions: result.status === 'fulfilled' ? result.value : [] };
+        }));
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Error al cargar roles';
         setError(errorMessage);
@@ -81,24 +101,6 @@ export function Role() {
       title="Nuevo rol"
       setOpen={() => setOpenCreate(!openCreate)}
       open={openCreate}
-    />,
-    <Modal
-      key="asignar-permisos"
-      trigger={<Button variant="outline">Asignar</Button>}
-      data={
-        <ModalAssignPermissions
-          roles={roles}
-          onSuccess={() => {
-            setOpenAssign(false);
-            handleRefresh();
-          }}
-          onClose={() => setOpenAssign(false)}
-        />
-      }
-      subTitle="Asignar permisos a un rol"
-      title="Asignar permisos"
-      setOpen={() => setOpenAssign(!openAssign)}
-      open={openAssign}
     />
   ];
 
@@ -159,6 +161,21 @@ export function Role() {
             }
           }}
           open={openUpdate}
+        />
+      )}
+      {permissionsRole && (
+        <Modal
+          trigger={<span style={{ display: 'none' }} />}
+          data={
+            <ModalAssignPermissions
+              role={permissionsRole}
+              onClose={closePermissions}
+            />
+          }
+          subTitle={`Permisos del rol ${permissionsRole.name}`}
+          title="Permisos"
+          setOpen={closePermissions}
+          open={openPermissions}
         />
       )}
     </>

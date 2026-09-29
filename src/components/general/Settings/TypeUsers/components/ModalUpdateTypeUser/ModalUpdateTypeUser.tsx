@@ -3,13 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { userTypeService } from "@/services/userTypeService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,14 +16,12 @@ interface ModalUpdateTypeUserProps {
 
 export function ModalUpdateTypeUser({ typeUser, onSuccess, onClose }: ModalUpdateTypeUserProps) {
   const [description, setDescription] = useState(typeUser.description || '');
-  const [status, setStatus] = useState(typeUser.state || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     setDescription(typeUser.description || '');
-    setStatus(typeUser.state || '');
   }, [typeUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,11 +30,6 @@ export function ModalUpdateTypeUser({ typeUser, onSuccess, onClose }: ModalUpdat
 
     if (!description.trim()) {
       setError('La descripción es requerida');
-      return;
-    }
-
-    if (!status) {
-      setError('El estado es requerido');
       return;
     }
 
@@ -58,7 +44,6 @@ export function ModalUpdateTypeUser({ typeUser, onSuccess, onClose }: ModalUpdat
         id: typeUser.id,
         description: description.trim(),
         name: typeUser.name,
-        // state: status,
       });
       onSuccess?.();
       onClose?.();
@@ -102,23 +87,6 @@ export function ModalUpdateTypeUser({ typeUser, onSuccess, onClose }: ModalUpdat
           required
           disabled={loading}
         />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="status">Estado *</Label>
-        <Select
-          value={status}
-          onValueChange={setStatus}
-          disabled={loading}
-        >
-          <SelectTrigger id="status" className="w-full">
-            <SelectValue placeholder="Selecciona un estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="active">Activo</SelectItem>
-            <SelectItem value="inactive">Inactivo</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {error && (

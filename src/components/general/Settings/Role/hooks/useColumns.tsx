@@ -2,8 +2,12 @@ import { Button } from "@/components/ui/button";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import type { Role } from "../types";
+import { authorName, formatDate, StateBadge } from "../../common";
 
-export const useColumns = (onEdit?: (role: Role) => void) => {
+export const useColumns = (
+  onEdit?: (role: Role) => void,
+  onManagePermissions?: (role: Role) => void
+) => {
   const columns: ColumnDef<Role>[] = [
     {
       header: () => {
@@ -29,88 +33,44 @@ export const useColumns = (onEdit?: (role: Role) => void) => {
     },
     {
       header: "Permisos",
-      accessorKey: "permissions",
+      id: "permissions",
       cell: ({ row }) => {
-        const permissions = row.getValue("permissions") as Role['permissions'];
-        if (!permissions || (Array.isArray(permissions) && permissions.length === 0)) {
+        const names = (row.original.permissions ?? [])
+          .map(assignment => assignment.permission?.name)
+          .filter((name): name is string => Boolean(name));
+        if (names.length === 0) {
           return <span className="text-muted-foreground">Sin permisos</span>;
         }
-        
-        if (Array.isArray(permissions)) {
-          // Si es un array de objetos con name
-          if (permissions.length > 0 && typeof permissions[0] === 'object' && 'name' in permissions[0]) {
-            return (
-              <div className="flex flex-wrap gap-1">
-                {(permissions as { id: string; name: string }[]).slice(0, 3).map((perm: { id: string; name: string }) => (
-                  <span key={perm.id} className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
-                    {perm.name}
-                  </span>
-                ))}
-                {permissions.length > 3 && (
-                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
-                    +{permissions.length - 3} más
-                  </span>
-                )}
-              </div>
-            );
-          }
-          // Si es un array de strings
-          return (
-            <div className="flex flex-wrap gap-1">
-              {permissions.slice(0, 3).map((perm: string) => (
-                <span key={perm} className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
-                  {perm}
-                </span>
-              ))}
-              {permissions.length > 3 && (
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
-                  +{permissions.length - 3} más
-                </span>
-              )}
-            </div>
-          );
-        }
-        
-        return <span className="text-muted-foreground">-</span>;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {names.slice(0, 3).map(name => (
+              <span key={name} className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
+                {name}
+              </span>
+            ))}
+            {names.length > 3 && (
+              <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                +{names.length - 3} más
+              </span>
+            )}
+          </div>
+        );
       }
     },
     {
       header: "Autor",
-      accessorKey: "author"
+      id: "author",
+      accessorFn: (row) => authorName(row.userCreated)
     },
     {
       header: "Fecha",
-      accessorKey: "date",
-      cell: ({ row }) => {
-        const date = row.getValue("date") as string;
-        if (!date) return '-';
-        try {
-          const dateObj = new Date(date);
-          return dateObj.toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-          });
-        } catch {
-          return date;
-        }
-      }
+      accessorKey: "createdAt",
+      cell: ({ row }) => formatDate(row.original.createdAt)
     },
     {
       header: "Estado",
       accessorKey: "state",
-      cell: ({ row }) => {
-        const state = row.getValue("state") as string;
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs ${
-            state === 'active' 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-gray-100 text-gray-800'
-          }`}>
-            {state === 'active' ? 'Activo' : 'Inactivo'}
-          </span>
-        );
-      }
+      cell: ({ row }) => <StateBadge state={row.original.state} />
     },
     {
       header: "Acciones",
@@ -118,12 +78,20 @@ export const useColumns = (onEdit?: (role: Role) => void) => {
       cell: ({ row }: { row: Row<Role> }) => {
         const role = row.original as Role;
         return (
-          <Button 
-            variant="outline" 
-            onClick={() => onEdit?.(role)}
-          >
-            Editar
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onEdit?.(role)}
+            >
+              Editar
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => onManagePermissions?.(role)}
+            >
+              Permisos
+            </Button>
+          </div>
         );
       }
     }

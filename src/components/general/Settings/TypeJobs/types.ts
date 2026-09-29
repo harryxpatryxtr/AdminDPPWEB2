@@ -1,7 +1,3 @@
-export type TypeJobs = {
-  id: string;
-  name: string;
-  description: string;
-  author: string;
-  state: string;
-};
+import type { CatalogItem } from '../common';
+
+export type TypeJobs = CatalogItem;

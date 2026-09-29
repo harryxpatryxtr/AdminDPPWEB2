@@ -2,171 +2,141 @@
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Multiselect, MultiselectOption } from "@/components/ui/multiselect";
-import { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { roleService } from "@/services/roleService";
 import { permissionService } from "@/services/permissionService";
 import { useAuth } from "@/contexts/AuthContext";
-import { getToken, isTokenExpired } from "@/lib/tokenUtils";
-import { useRouter } from "next/navigation";
-import type { Role } from "../../types";
+import type { Role, RolePermission } from "../../types";
 import type { Permission } from "@/components/general/Settings/Permission/types";
 
 interface ModalAssignPermissionsProps {
-  roles: Role[];
-  onSuccess?: () => void;
+  role: Role;
   onClose?: () => void;
 }
 
-export function ModalAssignPermissions({ roles, onSuccess, onClose }: ModalAssignPermissionsProps) {
-  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
+export function ModalAssignPermissions({ role, onClose }: ModalAssignPermissionsProps) {
+  const [assigned, setAssigned] = useState<RolePermission[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingPermissions, setLoadingPermissions] = useState(false);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
-  const router = useRouter();
 
-  // Cargar permisos al abrir el modal
+  const loadData = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const [allPermissions, rolePermissions] = await Promise.all([
+        permissionService.getAllPermissions(),
+        roleService.getPermissionsByRole(role._id),
+      ]);
+      setPermissions(allPermissions);
+      setAssigned(rolePermissions);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar permisos');
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, role._id]);
+
   useEffect(() => {
-    const fetchPermissions = async () => {
-      if (!isAuthenticated) return;
+    loadData();
+  }, [loadData]);
 
-      try {
-        setLoadingPermissions(true);
-        const data = await permissionService.getAllPermissions();
-        setPermissions(data);
-      } catch (err) {
-        console.error('Error fetching permissions:', err);
-      } finally {
-        setLoadingPermissions(false);
-      }
-    };
+  // Solo se ofrecen los permisos que el rol todavía no tiene
+  const assignedIds = new Set(assigned.map(a => a.permission?._id));
+  const permissionOptions: MultiselectOption[] = permissions
+    .filter(permission => !assignedIds.has(permission._id))
+    .map(permission => ({
+      value: permission._id,
+      label: permission.name,
+    }));
 
-    fetchPermissions();
-  }, [isAuthenticated]);
-
-  const permissionOptions: MultiselectOption[] = permissions.map(permission => ({
-    value: permission.id,
-    label: permission.name,
-  }));
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!selectedRoleId) {
-      setError('Por favor, selecciona un rol');
-      return;
-    }
-
+  const handleAdd = async () => {
     if (selectedPermissionIds.length === 0) {
-      setError('Por favor, selecciona al menos un permiso');
-      return;
-    }
-
-    if (!isAuthenticated) {
-      setError('Debes estar autenticado para asignar permisos');
-      return;
-    }
-
-    // Verificar que el token existe y no ha expirado
-    const token = getToken();
-    if (!token) {
-      setError('No se encontró token de autenticación. Por favor, inicia sesión nuevamente.');
-      router.push('/login');
-      return;
-    }
-
-    if (isTokenExpired(token)) {
-      setError('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
-      router.push('/login');
+      setError('Selecciona al menos un permiso');
       return;
     }
 
     try {
-      setLoading(true);
-      
-      // Asignar cada permiso individualmente
-      // El servicio requiere un id único para cada asignación
-      // Usaremos un timestamp o índice como id
+      setSaving(true);
+      setError(null);
+      // El backend exige un id único por asignación
       const timestamp = Date.now();
-      const assignments = selectedPermissionIds.map((permissionId, index) => {
-        return roleService.setPermission({
-          id: `${timestamp}-${index}`, // Generar un id único
-          permissionId: permissionId,
-          roleId: selectedRoleId,
-        });
-      });
-
-      // Esperar a que todas las asignaciones se completen
-      await Promise.all(assignments);
-      
-      // Limpiar formulario
-      setSelectedRoleId('');
+      await Promise.all(selectedPermissionIds.map((permissionId, index) =>
+        roleService.setPermission({
+          id: `${role.id}-${timestamp}-${index}`,
+          permissionId,
+          roleId: role._id,
+        })
+      ));
       setSelectedPermissionIds([]);
-      
-      // Llamar callbacks
-      onSuccess?.();
-      onClose?.();
+      await loadData();
     } catch (err) {
-      let errorMessage = 'Error al asignar permisos';
-      
-      if (err instanceof Error) {
-        errorMessage = err.message;
-        
-        // Si el error es de token inválido, redirigir al login
-        if (errorMessage.includes('sesión ha expirado') || errorMessage.includes('Invalid token')) {
-          setTimeout(() => {
-            router.push('/login');
-          }, 2000);
-        }
-      }
-      
-      setError(errorMessage);
+      setError(err instanceof Error ? err.message : 'Error al asignar permisos');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
+  const handleRemove = async (assignment: RolePermission) => {
+    try {
+      setSaving(true);
+      setError(null);
+      await roleService.removePermission(assignment.id);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al quitar el permiso');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <p className="py-4 text-sm text-muted-foreground">Cargando permisos...</p>;
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 py-4">
+    <div className="space-y-4 py-4">
       <div className="space-y-2">
-        <Label htmlFor="role">Rol *</Label>
-        <Select
-          value={selectedRoleId}
-          onValueChange={setSelectedRoleId}
-          disabled={loading || loadingPermissions}
-        >
-          <SelectTrigger id="role" className="w-full">
-            <SelectValue placeholder="Selecciona un rol" />
-          </SelectTrigger>
-          <SelectContent>
-            {roles.map((role) => (
-              <SelectItem key={role.id} value={role.id}>
-                {role.name}
-              </SelectItem>
+        <Label>Permisos asignados</Label>
+        {assigned.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Este rol no tiene permisos</p>
+        ) : (
+          <div className="flex flex-wrap gap-1">
+            {assigned.map(assignment => (
+              <span
+                key={assignment.id}
+                className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs"
+              >
+                {assignment.permission?.name ?? 'Permiso eliminado'}
+                <button
+                  type="button"
+                  onClick={() => handleRemove(assignment)}
+                  disabled={saving}
+                  aria-label={`Quitar ${assignment.permission?.name ?? 'permiso'}`}
+                  className="hover:text-blue-950 disabled:opacity-50"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
             ))}
-          </SelectContent>
-        </Select>
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="permissions">Permisos *</Label>
+        <Label htmlFor="permissions">Agregar permisos</Label>
         <Multiselect
           options={permissionOptions}
           value={selectedPermissionIds}
           onChange={setSelectedPermissionIds}
-          placeholder="Selecciona uno o más permisos"
-          disabled={loading || loadingPermissions}
+          placeholder={permissionOptions.length ? "Selecciona uno o más permisos" : "No hay más permisos disponibles"}
+          disabled={saving || permissionOptions.length === 0}
         />
       </div>
 
@@ -181,15 +151,14 @@ export function ModalAssignPermissions({ roles, onSuccess, onClose }: ModalAssig
           type="button"
           variant="outline"
           onClick={onClose}
-          disabled={loading}
+          disabled={saving}
         >
-          Cancelar
+          Cerrar
         </Button>
-        <Button type="submit" disabled={loading || loadingPermissions}>
-          {loading ? 'Asignando...' : 'Asignar'}
+        <Button type="button" onClick={handleAdd} disabled={saving || selectedPermissionIds.length === 0}>
+          {saving ? 'Guardando...' : 'Agregar'}
         </Button>
       </div>
-    </form>
+    </div>
   );
 }
-
