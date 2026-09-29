@@ -17,11 +17,6 @@ import Logo from "@/assets/logo_traza.png";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 const items = {
-  user: {
-    name: "Pedro Mollehuanca",
-    email: "pedro.mollehuanca@umatechnology.io",
-    avatar: "/avatars/shadcn.jpg"
-  },
   navMain: [
     {
       title: "Inicio",
@@ -99,7 +94,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={items.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

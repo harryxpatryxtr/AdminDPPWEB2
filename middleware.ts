@@ -13,7 +13,7 @@ export function middleware(request: NextRequest) {
 
   // Si está en una ruta pública y está autenticado, redirigir al dashboard
   if (isPublicRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL('/user', request.url))
+    return NextResponse.redirect(new URL('/home', request.url))
   }
 
   // Si no está en una ruta pública y no está autenticado, redirigir al login
@@ -30,7 +30,7 @@ export function middleware(request: NextRequest) {
     }
     // Verificar rol de admin desde el token
     if (user?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/user', request.url))
+      return NextResponse.redirect(new URL('/home', request.url))
     }
   }
 

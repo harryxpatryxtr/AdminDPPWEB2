@@ -1,3 +1,5 @@
+import type { StoredUser } from '@/lib/tokenUtils';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-back-adm-production.up.railway.app/api';
 
 export interface LoginCredentials {
@@ -7,12 +9,7 @@ export interface LoginCredentials {
 
 export interface LoginResponse {
   token: string;
-  user?: {
-    id: string;
-    email: string;
-    name?: string;
-    role?: string;
-  };
+  user?: StoredUser;
   message?: string;
 }
 
@@ -51,27 +48,9 @@ export const authService = {
   },
 
   /**
-   * Verifica si un token es válido
-   */
-  async verifyToken(token: string): Promise<boolean> {
-    try {
-      const response = await fetch(`${API_URL}/auth/verify`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      return response.ok;
-    } catch (error) {
-      return false;
-    }
-  },
-
-  /**
    * Obtiene información del usuario autenticado
    */
-  async getCurrentUser(token: string) {
+  async getCurrentUser(token: string): Promise<StoredUser> {
     try {
       const response = await fetch(`${API_URL}/auth/me`, {
         method: 'GET',

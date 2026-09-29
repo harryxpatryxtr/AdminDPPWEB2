@@ -26,7 +26,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
 
       // Verificar rol si es requerido
       if (requiredRole && user?.role !== requiredRole) {
-        router.push('/user');
+        router.push('/home');
         return;
       }
     }

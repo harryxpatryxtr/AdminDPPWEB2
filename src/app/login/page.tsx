@@ -20,7 +20,7 @@ export default function LoginPage() {
   // Redirigir si ya está autenticado
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/user')
+      router.push('/home')
     }
   }, [isAuthenticated, router])
 
@@ -35,7 +35,7 @@ export default function LoginPage() {
       setSuccess('Inicio de sesión exitoso')
       // Redirigir después de un breve delay para mostrar el mensaje
       setTimeout(() => {
-        router.push('/user')
+        router.push('/home')
       }, 500)
     } catch (error) {
       if (error instanceof Error) {
@@ -52,7 +52,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/user')
+      router.push('/home')
     }
   }, [status, router])
 
@@ -60,7 +60,7 @@ export default function LoginPage() {
     try {
       setIsLoading(true)
       await signIn('google', {
-        callbackUrl: '/user',
+        callbackUrl: '/home',
         redirect: true,
       })
     } catch (error) {

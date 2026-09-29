@@ -10,8 +10,10 @@ const COOKIE_MAX_AGE = parseInt(process.env.NEXT_PUBLIC_JWT_COOKIE_MAX_AGE || '2
 export interface StoredUser {
   id: string;
   email: string;
+  username?: string;
   name?: string;
-  role?: string;
+  role?: string | null; // nombre del rol
+  roleId?: string | null;
 }
 
 /**

@@ -4,3 +4,5 @@ export * from "./TypeDocuments";
 export * from "./TypeJobs";
 export * from "./Permission";
 export * from "./Role";
+export * from "./User";
+
