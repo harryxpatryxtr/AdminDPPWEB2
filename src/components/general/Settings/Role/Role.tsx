@@ -66,7 +66,7 @@ export function Role() {
         const data = await roleService.getAllRoles();
         // El listado de roles no trae sus permisos: se piden por rol
         const permissionsByRole = await Promise.allSettled(
-          data.map(role => roleService.getPermissionsByRole(role._id))
+          data.map(role => roleService.getPermissionsByRole(role.idDb))
         );
         setRoles(data.map((role, index) => {
           const result = permissionsByRole[index];

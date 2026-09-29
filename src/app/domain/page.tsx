@@ -4,7 +4,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function DomainPage() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredPermission="domain:read">
       <Layout>
         <Domain />
       </Layout>

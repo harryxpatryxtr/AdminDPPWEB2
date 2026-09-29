@@ -1,125 +1,73 @@
 /**
- * Utilidades para manejar tokens JWT en el cliente
+ * Utilidades para manejar la sesión JWT en el cliente.
+ *
+ * El backend emite un access token corto (15 min) y un refresh token largo (7 días).
+ * La cookie guarda el refresh token porque el middleware de Next solo la usa para
+ * saber si hay una sesión vigente; las peticiones usan el access token.
  */
 
-const TOKEN_KEY = 'auth_token';
-const USER_KEY = 'auth_user';
+const ACCESS_TOKEN_KEY = 'auth_token';
+const REFRESH_TOKEN_KEY = 'auth_refresh_token';
 const COOKIE_NAME = process.env.NEXT_PUBLIC_JWT_COOKIE_NAME || 'auth_token';
-const COOKIE_MAX_AGE = parseInt(process.env.NEXT_PUBLIC_JWT_COOKIE_MAX_AGE || '2592000', 10); // 30 días por defecto
 
-export interface StoredUser {
-  id: string;
-  email: string;
-  username?: string;
-  name?: string;
-  role?: string | null; // nombre del rol
-  roleId?: string | null;
+export interface SessionTokens {
+  accessToken: string;
+  refreshToken: string;
 }
 
-/**
- * Guarda el token JWT en localStorage y cookies
- */
-export const setToken = (token: string): void => {
-  if (typeof window !== 'undefined') {
-    // Guardar en localStorage
-    localStorage.setItem(TOKEN_KEY, token);
-    
-    // Guardar en cookie para que el middleware pueda acceder
-    const expires = new Date();
-    expires.setTime(expires.getTime() + COOKIE_MAX_AGE * 1000);
-    document.cookie = `${COOKIE_NAME}=${token}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-  }
+const isBrowser = () => typeof window !== 'undefined';
+
+export const setSession = ({ accessToken, refreshToken }: SessionTokens): void => {
+  if (!isBrowser()) return;
+  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+
+  const expires = getTokenExpiration(refreshToken);
+  const expiresAttr = expires ? `; expires=${expires.toUTCString()}` : '';
+  document.cookie = `${COOKIE_NAME}=${refreshToken}${expiresAttr}; path=/; SameSite=Lax`;
 };
 
-/**
- * Obtiene el token JWT de localStorage
- */
-export const getToken = (): string | null => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem(TOKEN_KEY);
-  }
-  return null;
-};
+export const getToken = (): string | null =>
+  isBrowser() ? localStorage.getItem(ACCESS_TOKEN_KEY) : null;
 
-/**
- * Elimina el token JWT de localStorage y cookies
- */
-export const removeToken = (): void => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    
-    // Eliminar cookie
-    document.cookie = `${COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-  }
-};
+export const getRefreshToken = (): string | null =>
+  isBrowser() ? localStorage.getItem(REFRESH_TOKEN_KEY) : null;
 
-/**
- * Guarda información del usuario en localStorage
- */
-export const setUser = (user: StoredUser): void => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-  }
-};
-
-/**
- * Obtiene información del usuario de localStorage
- */
-export const getUser = (): StoredUser | null => {
-  if (typeof window !== 'undefined') {
-    const userStr = localStorage.getItem(USER_KEY);
-    if (userStr) {
-      try {
-        return JSON.parse(userStr);
-      } catch (error) {
-        return null;
-      }
-    }
-  }
-  return null;
-};
-
-/**
- * Verifica si hay un token almacenado
- */
-export const isAuthenticated = (): boolean => {
-  return getToken() !== null;
+export const clearSession = (): void => {
+  if (!isBrowser()) return;
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  // Datos de la versión anterior de la sesión
+  localStorage.removeItem('auth_user');
+  document.cookie = `${COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 };
 
 /**
  * Decodifica el payload del JWT (sin verificar la firma)
- * Útil para obtener información básica del token
  */
-export const decodeToken = (token: string): any => {
+export const decodeToken = (token: string): { exp?: number } | null => {
   try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch (error) {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(base64));
+  } catch {
     return null;
   }
 };
 
-/**
- * Verifica si el token ha expirado
- */
-export const isTokenExpired = (token: string): boolean => {
-  try {
-    const decoded = decodeToken(token);
-    if (!decoded || !decoded.exp) {
-      return true;
-    }
-    const expirationTime = decoded.exp * 1000; // Convertir a milisegundos
-    return Date.now() >= expirationTime;
-  } catch (error) {
-    return true;
-  }
+const getTokenExpiration = (token: string): Date | null => {
+  const exp = decodeToken(token)?.exp;
+  return exp ? new Date(exp * 1000) : null;
 };
 
+export const isTokenExpired = (token: string): boolean => {
+  const expiration = getTokenExpiration(token);
+  return !expiration || Date.now() >= expiration.getTime();
+};
+
+/**
+ * Hay sesión mientras el refresh token siga vigente
+ */
+export const hasSession = (): boolean => {
+  const refreshToken = getRefreshToken();
+  return refreshToken !== null && !isTokenExpired(refreshToken);
+};

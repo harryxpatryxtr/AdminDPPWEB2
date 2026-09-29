@@ -4,7 +4,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function TypeJobsPage() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredPermission="position:read">
       <Layout>
         <TypeJobs />
       </Layout>

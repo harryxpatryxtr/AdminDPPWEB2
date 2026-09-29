@@ -32,7 +32,7 @@ export function ModalAssignPermissions({ role, onClose }: ModalAssignPermissions
       setError(null);
       const [allPermissions, rolePermissions] = await Promise.all([
         permissionService.getAllPermissions(),
-        roleService.getPermissionsByRole(role._id),
+        roleService.getPermissionsByRole(role.idDb),
       ]);
       setPermissions(allPermissions);
       setAssigned(rolePermissions);
@@ -41,7 +41,7 @@ export function ModalAssignPermissions({ role, onClose }: ModalAssignPermissions
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, role._id]);
+  }, [isAuthenticated, role.idDb]);
 
   useEffect(() => {
     loadData();
@@ -50,9 +50,9 @@ export function ModalAssignPermissions({ role, onClose }: ModalAssignPermissions
   // Solo se ofrecen los permisos que el rol todavía no tiene
   const assignedIds = new Set(assigned.map(a => a.permission?._id));
   const permissionOptions: MultiselectOption[] = permissions
-    .filter(permission => !assignedIds.has(permission._id))
+    .filter(permission => !assignedIds.has(permission.idDb))
     .map(permission => ({
-      value: permission._id,
+      value: permission.idDb,
       label: permission.name,
     }));
 
@@ -65,14 +65,8 @@ export function ModalAssignPermissions({ role, onClose }: ModalAssignPermissions
     try {
       setSaving(true);
       setError(null);
-      // El backend exige un id único por asignación
-      const timestamp = Date.now();
-      await Promise.all(selectedPermissionIds.map((permissionId, index) =>
-        roleService.setPermission({
-          id: `${role.id}-${timestamp}-${index}`,
-          permissionId,
-          roleId: role._id,
-        })
+      await Promise.all(selectedPermissionIds.map(permissionId =>
+        roleService.setPermission({ permissionId, roleId: role.idDb })
       ));
       setSelectedPermissionIds([]);
       await loadData();

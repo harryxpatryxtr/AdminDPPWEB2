@@ -1,30 +1,13 @@
 // Tipos y helpers compartidos por los catálogos de configuración.
 // Reflejan la forma en que el backend (Admin-Back-Adm) devuelve los documentos de Mongo.
 
-export type AuditUser = {
-  _id: string;
-  email?: string;
-  username?: string;
-  firstName?: string;
-  lastName?: string;
-} | null;
-
 export type CatalogItem = {
-  _id: string;
+  idDb: string; // _id de Mongo
   id: string;
   name: string;
   description: string;
   state: number; // 1: activo, 0: inactivo
-  userCreated?: AuditUser;
-  userUpdate?: AuditUser;
   createdAt?: string;
-  updatedAt?: string;
-};
-
-export const authorName = (user?: AuditUser): string => {
-  if (!user) return '-';
-  const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-  return fullName || user.username || user.email || '-';
 };
 
 export const formatDate = (date?: string): string => {

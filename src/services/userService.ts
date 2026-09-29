@@ -1,69 +1,81 @@
 import { apiGet, apiPost, apiPut } from '@/lib/apiClient';
-import type { User } from '@/components/general/Settings/User/types';
+import type { Sex, User } from '@/components/general/Settings/User/types';
 
-export interface CreateUserRequest {
-  username: string;
+// Datos de ficha comunes a crear y editar. Los catálogos van como idDb.
+export interface UserProfile {
+  firstName?: string;
+  paternalSurname?: string;
+  maternalSurname?: string;
+  cellphone?: string;
+  documentNumber?: string;
+  sex?: Sex | null;
+  idTypeUser?: string | null;
+  idTypeDocument?: string | null;
+  idTypeCargo?: string | null;
+}
+
+export interface CreateUserRequest extends UserProfile {
+  user: string;
   email: string;
   password: string;
-  firstName?: string;
-  lastName?: string;
-  role: string; // _id de Mongo del rol
 }
 
-export interface UpdateUserRequest {
-  id: string; // _id de Mongo del usuario
-  username?: string;
+export interface UpdateUserRequest extends UserProfile {
+  id: string;
+  user?: string;
   email?: string;
   password?: string;
-  firstName?: string;
-  lastName?: string;
-  role?: string;
-  isActive?: boolean;
+  state?: 0 | 1;
 }
+
+const withContext = async <T>(action: string, request: () => Promise<T>): Promise<T> => {
+  try {
+    return await request();
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Error al ${action}: ${error.message}`);
+    }
+    throw new Error('Error de conexión con el servidor');
+  }
+};
 
 export const userService = {
   /**
-   * Obtiene todos los usuarios (activos e inactivos)
+   * Usuarios activos e inactivos. El backend pagina; se piden hasta 100.
    */
-  async getAllUsers(): Promise<User[]> {
-    try {
-      const response = await apiGet<{ data?: { users?: User[] } }>('/user/getAll');
+  getAllUsers(): Promise<User[]> {
+    return withContext('obtener usuarios', async () => {
+      const response = await apiGet<{ data?: { users?: User[] } }>('/user/getAll?limit=100');
       return response.data?.users ?? [];
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Error al obtener usuarios: ${error.message}`);
-      }
-      throw new Error('Error de conexión con el servidor');
-    }
+    });
+  },
+
+  createUser(data: CreateUserRequest): Promise<User> {
+    return withContext('crear usuario', async () => {
+      const response = await apiPost<{ data: { user: User } }>('/user/register', data);
+      return response.data.user;
+    });
+  },
+
+  updateUser(data: UpdateUserRequest): Promise<User> {
+    return withContext('actualizar usuario', async () => {
+      const response = await apiPut<{ data: { user: User } }>('/user/update', data);
+      return response.data.user;
+    });
   },
 
   /**
-   * Crea un nuevo usuario
+   * id es el id del usuario; roleId, el idDb del rol
    */
-  async createUser(data: CreateUserRequest): Promise<User | undefined> {
-    try {
-      const response = await apiPost<{ data?: { user?: User } }>('/user/register', data);
-      return response.data?.user;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Error al crear usuario: ${error.message}`);
-      }
-      throw new Error('Error de conexión con el servidor');
-    }
+  assignRole(id: string, roleId: string): Promise<void> {
+    return withContext('asignar rol', async () => {
+      await apiPost('/user/assignRole', { id, roleId });
+    });
   },
 
-  /**
-   * Actualiza un usuario existente
-   */
-  async updateUser(data: UpdateUserRequest): Promise<User | undefined> {
-    try {
-      const response = await apiPut<{ data?: { user?: User } }>('/user/update', data);
-      return response.data?.user;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Error al actualizar usuario: ${error.message}`);
-      }
-      throw new Error('Error de conexión con el servidor');
-    }
+  unassignRole(id: string, roleId: string): Promise<void> {
+    return withContext('quitar rol', async () => {
+      await apiPost('/user/unassignRole', { id, roleId });
+    });
   },
 };

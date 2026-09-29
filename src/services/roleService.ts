@@ -22,9 +22,8 @@ export interface UpdateRoleRequest {
 }
 
 export interface SetPermissionRequest {
-  id: string;
-  permissionId: string; // _id de Mongo del permiso
-  roleId: string; // _id de Mongo del rol
+  permissionId: string; // idDb del permiso
+  roleId: string; // idDb del rol
 }
 
 export const roleService = {
@@ -101,7 +100,7 @@ export const roleService = {
 
   /**
    * Obtiene las asignaciones activas de permisos de un rol.
-   * roleId es el _id de Mongo del rol, no su código.
+   * roleId es el idDb del rol, no su código.
    */
   async getPermissionsByRole(roleId: string): Promise<RolePermission[]> {
     try {

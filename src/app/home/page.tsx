@@ -5,7 +5,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
 
   return (
     <ProtectedRoute>
@@ -13,8 +13,10 @@ export default function HomePage() {
         <h1 className="text-2xl font-bold">Inicio</h1>
         {user && (
           <div className="mt-4">
-            <p>Bienvenido, {user.name || user.email}</p>
-            {user.role && <p className="text-sm text-muted-foreground">Rol: {user.role}</p>}
+            <p>Bienvenido, {user.fullName || user.user || user.email}</p>
+            <p className="text-sm text-muted-foreground">
+              {roles.length ? `Rol: ${roles.map(role => role.name).join(', ')}` : 'Sin rol asignado'}
+            </p>
           </div>
         )}
       </Layout>

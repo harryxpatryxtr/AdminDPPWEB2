@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import type { TypeDocuments } from "../types";
-import { authorName, StateBadge } from "../../common";
+import { StateBadge } from "../../common";
 
 export const useColumns = (onEdit?: (typeDocument: TypeDocuments) => void) => {
   const columns: ColumnDef<TypeDocuments>[] = [
@@ -27,11 +27,6 @@ export const useColumns = (onEdit?: (typeDocument: TypeDocuments) => void) => {
     {
       header: "Descripcion",
       accessorKey: "description"
-    },
-    {
-      header: "Autor",
-      id: "author",
-      accessorFn: (row) => authorName(row.userCreated)
     },
     {
       header: "Estado",

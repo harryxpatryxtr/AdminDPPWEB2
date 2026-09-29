@@ -14,7 +14,8 @@ export function Modal({
   subTitle,
   title,
   setOpen,
-  open
+  open,
+  className
 }: 
 {
   data: React.ReactNode;
@@ -23,11 +24,12 @@ export function Modal({
   title?: string;
   setOpen?: () => void;
   open?: boolean;
+  className?: string;
 }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className={className ?? "sm:max-w-[425px]"}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{subTitle}</DialogDescription>

@@ -4,7 +4,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
   export default function TypeUsersPage() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredPermission="user-type:read">
       <Layout>
         <TypeUsers />
       </Layout>

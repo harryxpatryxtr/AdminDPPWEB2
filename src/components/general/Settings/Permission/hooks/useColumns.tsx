@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import type { Permission } from "../types";
-import { authorName, StateBadge } from "../../common";
+import { StateBadge } from "../../common";
 
 export const useColumns = (onEdit?: (permission: Permission) => void) => {
   const columns: ColumnDef<Permission>[] = [
@@ -27,11 +27,6 @@ export const useColumns = (onEdit?: (permission: Permission) => void) => {
     {
       header: "Descripción",
       accessorKey: "description"
-    },
-    {
-      header: "Autor",
-      id: "author",
-      accessorFn: (row) => authorName(row.userCreated)
     },
     {
       header: "Fecha",

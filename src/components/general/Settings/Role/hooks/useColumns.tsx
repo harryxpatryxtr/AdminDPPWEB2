@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import type { Role } from "../types";
-import { authorName, formatDate, StateBadge } from "../../common";
+import { formatDate, StateBadge } from "../../common";
 
 export const useColumns = (
   onEdit?: (role: Role) => void,
@@ -56,11 +56,6 @@ export const useColumns = (
           </div>
         );
       }
-    },
-    {
-      header: "Autor",
-      id: "author",
-      accessorFn: (row) => authorName(row.userCreated)
     },
     {
       header: "Fecha",

@@ -6,15 +6,17 @@ import type { User as UserType } from './types'
 import { Button } from '@/components/ui/button'
 import { Modal } from '../../Modal'
 import { useState, useEffect } from 'react'
-import { ModalCreateUser, ModalUpdateUser } from './components'
+import { ModalUserForm } from './components'
 import { userService } from '@/services/userService'
 import { useAuth } from '@/contexts/AuthContext'
+
+const MODAL_WIDTH = "sm:max-w-[720px]";
 
 export function User() {
   const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, can } = useAuth();
 
   const [openCreate, setOpenCreate] = useState(false);
   const [openUpdate, setOpenUpdate] = useState(false);
@@ -35,7 +37,7 @@ export function User() {
     setSelectedUser(null);
   };
 
-  const columns = useColumns(handleEdit);
+  const columns = useColumns(can('user:update') ? handleEdit : undefined);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -59,12 +61,12 @@ export function User() {
     fetchUsers();
   }, [isAuthenticated, refreshKey]);
 
-  const headerActions = [
+  const headerActions = can('user:create') ? [
     <Modal
       key="nuevo-usuario"
       trigger={<Button>Nuevo</Button>}
       data={
-        <ModalCreateUser
+        <ModalUserForm
           onSuccess={() => {
             setOpenCreate(false);
             handleRefresh();
@@ -76,8 +78,9 @@ export function User() {
       title="Nuevo usuario"
       setOpen={() => setOpenCreate(!openCreate)}
       open={openCreate}
+      className={MODAL_WIDTH}
     />
-  ];
+  ] : [];
 
   if (loading) {
     return (
@@ -118,8 +121,8 @@ export function User() {
         <Modal
           trigger={<span style={{ display: 'none' }} />}
           data={
-            <ModalUpdateUser
-              key={selectedUser._id}
+            <ModalUserForm
+              key={selectedUser.idDb}
               user={selectedUser}
               onSuccess={() => {
                 closeUpdate();
@@ -132,6 +135,7 @@ export function User() {
           title="Editar usuario"
           setOpen={closeUpdate}
           open={openUpdate}
+          className={MODAL_WIDTH}
         />
       )}
     </>

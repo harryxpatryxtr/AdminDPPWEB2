@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import Logo from "@/assets/logo_traza.png";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { useAuth } from "@/contexts/AuthContext";
 const items = {
   navMain: [
     {
@@ -28,10 +29,10 @@ const items = {
       url: "#",
       icon: Settings2,
       items: [
-        { title: "Dominio", url: "/domain" },
-        { title: "Tipo Usuario", url: "/type-users" },
-        { title: "Tipo Documento", url: "/type-documents" },
-        { title: "Tipo Puesto", url: "/type-jobs" }
+        { title: "Dominio", url: "/domain", permission: "domain:read" },
+        { title: "Tipo Usuario", url: "/type-users", permission: "user-type:read" },
+        { title: "Tipo Documento", url: "/type-documents", permission: "document-type:read" },
+        { title: "Tipo Puesto", url: "/type-jobs", permission: "position:read" }
       ]
     },
     {
@@ -39,9 +40,9 @@ const items = {
       url: "#",
       icon: SquareTerminal,
       items: [
-        { title: "Permiso", url: "/permissions" },
-        { title: "Rol", url: "/roles" },
-        { title: "Usuario", url: "/users" }
+        { title: "Permiso", url: "/permissions", permission: "permission:read" },
+        { title: "Rol", url: "/roles", permission: "role:read" },
+        { title: "Usuario", url: "/users", permission: "user:read" }
       ]
     },
     {
@@ -55,6 +56,14 @@ const items = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const location = usePathname();
+  const { can } = useAuth();
+
+  // Solo las opciones que la sesión puede ver; los grupos vacíos se ocultan
+  const navMain = items.navMain
+    .map((item) => item.items
+      ? { ...item, items: item.items.filter((sub) => !("permission" in sub) || can(sub.permission as string)) }
+      : item)
+    .filter((item) => !item.items || item.items.length > 0);
   const [activeMenus, setActiveMenus] = useState<{ [key: string]: boolean }>(
     {}
   );
@@ -88,7 +97,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain
-          items={items.navMain}
+          items={navMain}
           activeMenus={activeMenus}
           setActiveMenus={setActiveMenus}
         />

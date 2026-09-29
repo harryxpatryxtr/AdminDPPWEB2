@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import type { TypeJobs } from '../types'
-import { authorName, StateBadge } from '../../common';
+import { StateBadge } from '../../common';
 import { ArrowUpDown } from 'lucide-react';
 import { ColumnDef, Row } from '@tanstack/react-table';
 
@@ -24,11 +24,6 @@ export const useColumns = (onEdit?: (position: TypeJobs) => void) => {
     {
       header: "Descripción",
       accessorKey: "description"
-    },
-    {
-      header: "Autor",
-      id: "author",
-      accessorFn: (row) => authorName(row.userCreated)
     },
     {
       header: "Estado",

@@ -29,11 +29,12 @@ const initials = (text: string) =>
 
 export function NavUser() {
   const { isMobile } = useSidebar();
-  const { user, logout } = useAuth();
+  const { user, roles, logout } = useAuth();
 
   if (!user) return null;
 
-  const displayName = user.name || user.username || user.email;
+  const displayName = user.fullName || user.user || user.email;
+  const roleNames = roles.map(role => role.name).join(', ');
 
   const userInfo = (
     <>
@@ -42,7 +43,7 @@ export function NavUser() {
       </Avatar>
       <div className="grid flex-1 text-left text-sm leading-tight">
         <span className="truncate font-semibold">{displayName}</span>
-        <span className="truncate text-xs">{user.role || user.email}</span>
+        <span className="truncate text-xs">{roleNames || user.email}</span>
       </div>
     </>
   );

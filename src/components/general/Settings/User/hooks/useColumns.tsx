@@ -4,9 +4,6 @@ import { ArrowUpDown } from "lucide-react";
 import type { User } from "../types";
 import { formatDate, StateBadge } from "../../common";
 
-export const fullName = (user: User) =>
-  user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || '-';
-
 export const useColumns = (onEdit?: (user: User) => void) => {
   const columns: ColumnDef<User>[] = [
     {
@@ -21,21 +18,45 @@ export const useColumns = (onEdit?: (user: User) => void) => {
           </Button>
         );
       },
-      accessorKey: "username"
+      accessorKey: "user"
     },
     {
       header: "Nombre",
       id: "fullName",
-      accessorFn: (row) => fullName(row)
+      accessorFn: (row) => row.fullName || '-'
     },
     {
       header: "Email",
       accessorKey: "email"
     },
     {
-      header: "Rol",
-      id: "role",
-      accessorFn: (row) => row.role?.name ?? 'Sin rol'
+      header: "Documento",
+      id: "document",
+      accessorFn: (row) => [row.idTypeDocument?.name, row.documentNumber].filter(Boolean).join(' ') || '-'
+    },
+    {
+      header: "Puesto",
+      id: "position",
+      accessorFn: (row) => row.idTypeCargo?.name ?? '-'
+    },
+    {
+      header: "Roles",
+      id: "roles",
+      cell: ({ row }) => {
+        const roles = row.original.roles;
+        if (roles.length === 0) {
+          return <span className="text-muted-foreground">Sin rol</span>;
+        }
+        return (
+          <div className="flex flex-wrap gap-1">
+            {roles.map(role => (
+              <span key={role.idDb} className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
+                {role.name}
+              </span>
+            ))}
+          </div>
+        );
+      }
     },
     {
       header: "Creado",
@@ -44,24 +65,21 @@ export const useColumns = (onEdit?: (user: User) => void) => {
     },
     {
       header: "Estado",
-      accessorKey: "isActive",
-      cell: ({ row }) => <StateBadge state={row.original.isActive ? 1 : 0} />
+      accessorKey: "state",
+      cell: ({ row }) => <StateBadge state={row.original.state} />
     },
-    {
+    ...(onEdit ? [{
       header: "Acciones",
       accessorKey: "acciones",
-      cell: ({ row }: { row: Row<User> }) => {
-        const user = row.original as User;
-        return (
-          <Button
-            variant="outline"
-            onClick={() => onEdit?.(user)}
-          >
-            Editar
-          </Button>
-        );
-      }
-    }
+      cell: ({ row }: { row: Row<User> }) => (
+        <Button
+          variant="outline"
+          onClick={() => onEdit(row.original)}
+        >
+          Editar
+        </Button>
+      )
+    }] : [])
   ];
 
   return columns;

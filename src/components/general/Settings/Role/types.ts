@@ -1,12 +1,11 @@
 import type { CatalogItem } from '../common';
-import type { Permission } from '../Permission/types';
 
 // Asignación rol-permiso tal como la devuelve /role/getPermissions/:roleId
 export type RolePermission = {
-  _id: string;
+  idDb: string;
   id: string;
   role: string;
-  permission: Permission | null;
+  permission: { _id: string; id: string; name: string; description?: string } | null;
   state: number;
 };
 

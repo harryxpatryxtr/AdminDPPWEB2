@@ -1,18 +1,20 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { authService, LoginCredentials } from '@/services/authService';
-import { getToken, setToken, removeToken, setUser, getUser, isTokenExpired } from '@/lib/tokenUtils';
-import type { StoredUser } from '@/lib/tokenUtils';
+import { authService, LoginCredentials, SessionRole, SessionUser } from '@/services/authService';
+import { clearSession, hasSession, setSession } from '@/lib/tokenUtils';
 
 interface AuthContextType {
-  user: StoredUser | null;
-  token: string | null;
+  user: SessionUser | null;
+  roles: SessionRole[];
+  permissions: string[];
   loading: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => void;
   isAuthenticated: boolean;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => Promise<void>;
+  /** true si la sesión tiene la clave de permiso (ej. "user:create") */
+  can: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,91 +32,88 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUserState] = useState<StoredUser | null>(null);
-  const [token, setTokenState] = useState<string | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [roles, setRoles] = useState<SessionRole[]>([]);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Cargar estado inicial del localStorage
-  useEffect(() => {
-    const initAuth = () => {
-      const storedToken = getToken();
-      const storedUser = getUser();
+  const resetState = () => {
+    setUser(null);
+    setRoles([]);
+    setPermissions([]);
+  };
 
-      if (storedToken) {
-        // Verificar si el token ha expirado
-        if (isTokenExpired(storedToken)) {
-          removeToken();
-          setTokenState(null);
-          setUserState(null);
-        } else {
-          setTokenState(storedToken);
-          setUserState(storedUser);
+  const loadSession = useCallback(async () => {
+    const session = await authService.getSession();
+    setUser(session.user);
+    setRoles(session.roles);
+    setPermissions(session.permissions);
+  }, []);
+
+  // Recuperar la sesión guardada al cargar la app
+  useEffect(() => {
+    const init = async () => {
+      if (hasSession()) {
+        try {
+          await loadSession();
+        } catch {
+          clearSession();
+          resetState();
         }
+      } else {
+        clearSession();
       }
       setLoading(false);
     };
-
-    initAuth();
-  }, []);
+    init();
+  }, [loadSession]);
 
   const login = async (credentials: LoginCredentials) => {
     try {
       setLoading(true);
-      const response = await authService.login(credentials);
-      
-      // Guardar token
-      setToken(response.token);
-      setTokenState(response.token);
-
-      // Guardar información del usuario si viene en la respuesta
-      if (response.user) {
-        setUser(response.user);
-        setUserState(response.user);
-      } else {
-        // Si no viene el usuario, intentar obtenerlo del token o hacer una petición
-        try {
-          const userData = await authService.getCurrentUser(response.token);
-          if (userData) {
-            setUser(userData);
-            setUserState(userData);
-          }
-        } catch (error) {
-          console.warn('No se pudo obtener información del usuario:', error);
-        }
-      }
+      const { accessToken, refreshToken } = await authService.login(credentials);
+      setSession({ accessToken, refreshToken });
+      await loadSession();
     } catch (error) {
-      removeToken();
-      setTokenState(null);
-      setUserState(null);
+      clearSession();
+      resetState();
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    removeToken();
-    setTokenState(null);
-    setUserState(null);
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch {
+      // La sesión local se cierra aunque el servidor no responda
+    }
+    clearSession();
+    resetState();
     router.push('/login');
   };
 
-  const isAuthenticated = token !== null && !isTokenExpired(token);
+  const can = useCallback(
+    (permission: string) => permissions.includes(permission.toLowerCase()),
+    [permissions],
+  );
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        token,
+        roles,
+        permissions,
         loading,
+        isAuthenticated: user !== null,
         login,
         logout,
-        isAuthenticated,
+        can,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
-

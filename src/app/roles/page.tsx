@@ -4,7 +4,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function RolesPage() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredPermission="role:read">
       <Layout>
         <Role />
       </Layout>

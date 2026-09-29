@@ -1,75 +1,72 @@
-import type { StoredUser } from '@/lib/tokenUtils';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin-back-adm-production.up.railway.app/api';
+import { apiGet, apiPost, API_URL, ApiError } from '@/lib/apiClient';
+import type { SessionTokens } from '@/lib/tokenUtils';
 
 export interface LoginCredentials {
   email: string;
   password: string;
 }
 
-export interface LoginResponse {
-  token: string;
-  user?: StoredUser;
-  message?: string;
+export interface SessionUser {
+  id: string;
+  user: string;
+  email: string;
+  fullName?: string;
 }
 
-export interface ApiError {
-  message: string;
-  error?: string;
+export interface SessionRole {
+  idDb: string;
+  id: string;
+  name: string;
 }
+
+export interface SessionInfo {
+  user: SessionUser;
+  roles: SessionRole[];
+  permissions: string[];
+}
+
+export type LoginResponse = SessionTokens & { user: SessionUser };
 
 export const authService = {
   /**
-   * Realiza el login y retorna el token JWT
+   * Inicia sesión y devuelve el par de tokens
    */
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
+    let response: Response;
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
+      response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || 'Error al iniciar sesión');
-      }
-
-      return data;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
+    } catch {
       throw new Error('Error de conexión con el servidor');
     }
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new ApiError('Email o contraseña incorrectos', 401, data.code);
+      }
+      if (response.status === 429) {
+        throw new ApiError('Demasiados intentos. Espera unos minutos y vuelve a intentarlo', 429, data.code);
+      }
+      throw new ApiError(data.error || 'Error al iniciar sesión', response.status, data.code);
+    }
+    return data;
   },
 
   /**
-   * Obtiene información del usuario autenticado
+   * Usuario autenticado con sus roles y claves de permiso
    */
-  async getCurrentUser(token: string): Promise<StoredUser> {
-    try {
-      const response = await fetch(`${API_URL}/auth/me`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+  getSession(): Promise<SessionInfo> {
+    return apiGet<SessionInfo>('/auth/me');
+  },
 
-      if (!response.ok) {
-        throw new Error('Error al obtener información del usuario');
-      }
-
-      return await response.json();
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Error de conexión con el servidor');
-    }
+  /**
+   * Invalida el refresh token en el servidor
+   */
+  async logout(): Promise<void> {
+    await apiPost('/auth/logout');
   },
 };
-
